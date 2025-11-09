@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import StatusFilter from './StatusFilter';
 import PriorityFilter from './PriorityFilter';
 import SearchBox from './SearchBox';
@@ -18,6 +18,7 @@ export default function Board() {
   const [filters, setFilters] = useState({ status: 'All', priority: 'All' });
   const [search, setSearch] = useState('');
   const [queue, setQueue] = useState({});
+  const liveTimer = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +35,44 @@ export default function Board() {
       }
     })();
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    function scheduleNext() {
+      const ms = 6000 + Math.floor(Math.random() * 4000);
+      liveTimer.current = setTimeout(() => {
+        setTickets(prev => {
+          if (prev.length === 0) return prev;
+          const idx = Math.floor(Math.random() * prev.length);
+          const t = prev[idx];
+          const next = { ...t };
+          const nowIso = new Date().toISOString();
+          if (Math.random() < 0.5) {
+            const transitions = {
+              Open: ['In Progress', 'On Hold'],
+              'In Progress': ['Resolved', 'On Hold'],
+              'On Hold': ['Open', 'In Progress'],
+              Resolved: ['Resolved']
+            };
+            const choices = transitions[t.status] || ['Open'];
+            next.status = choices[Math.floor(Math.random() * choices.length)];
+          } else {
+            const order = ['Low', 'Medium', 'High', 'Critical'];
+            const pos = order.indexOf(t.priority);
+            const delta = Math.random() < 0.5 ? -1 : 1;
+            const clamped = Math.max(0, Math.min(order.length - 1, pos + delta));
+            next.priority = order[clamped];
+          }
+          next.updatedAt = nowIso;
+          const copy = [...prev];
+          copy[idx] = next;
+          return copy;
+        });
+        scheduleNext();
+      }, ms);
+    }
+    scheduleNext();
+    return () => clearTimeout(liveTimer.current);
   }, []);
 
   const visibleTickets = useMemo(() => {
