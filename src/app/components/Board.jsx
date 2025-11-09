@@ -12,7 +12,7 @@ const STATUS_OPTIONS = ['All', 'Open', 'In Progress', 'On Hold', 'Resolved'];
 const PRIORITY_OPTIONS = ['All', 'Low', 'Medium', 'High', 'Critical'];
 
 export default function Board() {
-
+  // lifted state
   const [tickets] = useState([]);          // API not wired yet
   const [loading] = useState(false);       // will be true during fetch later
   const [error] = useState('');
@@ -20,6 +20,7 @@ export default function Board() {
   const [search, setSearch] = useState('');
   const [queue, setQueue] = useState({});
 
+  // derived (for now just filters/search against empty list)
   const visibleTickets = useMemo(() => {
     const q = search.trim().toLowerCase();
     return tickets.filter(t => {
@@ -33,6 +34,7 @@ export default function Board() {
     });
   }, [tickets, filters, search]);
 
+  // queue handlers
   function handleAddToQueue(id) {
     setQueue(prev => (prev[id] ? prev : { ...prev, [id]: true }));
   }
