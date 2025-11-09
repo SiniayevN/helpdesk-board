@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import StatusFilter from './StatusFilter';
 import PriorityFilter from './PriorityFilter';
 import SearchBox from './SearchBox';
@@ -12,15 +12,30 @@ const STATUS_OPTIONS = ['All', 'Open', 'In Progress', 'On Hold', 'Resolved'];
 const PRIORITY_OPTIONS = ['All', 'Low', 'Medium', 'High', 'Critical'];
 
 export default function Board() {
-  // lifted state
-  const [tickets] = useState([]);          // API not wired yet
-  const [loading] = useState(false);       // will be true during fetch later
-  const [error] = useState('');
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState({ status: 'All', priority: 'All' });
   const [search, setSearch] = useState('');
   const [queue, setQueue] = useState({});
 
-  // derived (for now just filters/search against empty list)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/tickets', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!cancelled) setTickets(data);
+      } catch (e) {
+        if (!cancelled) setError('Unable to load tickets.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const visibleTickets = useMemo(() => {
     const q = search.trim().toLowerCase();
     return tickets.filter(t => {
@@ -34,7 +49,6 @@ export default function Board() {
     });
   }, [tickets, filters, search]);
 
-  // queue handlers
   function handleAddToQueue(id) {
     setQueue(prev => (prev[id] ? prev : { ...prev, [id]: true }));
   }

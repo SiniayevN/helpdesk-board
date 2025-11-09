@@ -1,20 +1,29 @@
 'use client';
 
+function fmt(iso) {
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
 export default function TicketCard({ ticket, onAddToQueue, isQueued }) {
-  const { title, priority, status, assignee, updatedAt } = ticket;
+  const { title, description, priority, status, assignee, updatedAt } = ticket;
   return (
     <div className="rounded-lg border border-gray-700 bg-gray-900 p-4 shadow">
-      <div className="text-sm text-gray-400">
-        Priority: <span className="font-medium text-gray-200">{priority}</span>
-      </div>
-      <div className="text-sm text-gray-400">
-        Status: <span className="font-medium text-gray-200">{status}</span>
-      </div>
+      <div className="text-sm text-gray-400">Priority: <span className="font-medium text-gray-200">{priority}</span></div>
+      <div className="text-sm text-gray-400">Status: <span className="font-medium text-gray-200">{status}</span></div>
+
       <h3 className="mt-2 text-lg font-semibold">{title}</h3>
+
+      <p className="mt-2 text-sm text-gray-300">{description}</p>
+
       <div className="mt-2 text-sm text-gray-300">
         <div>Assignee: {assignee}</div>
-        <div>Updated: {new Date(updatedAt).toLocaleString()}</div>
+        <div>Updated: {fmt(updatedAt)}</div>
       </div>
+
       <button
         className="mt-4 w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium disabled:opacity-50"
         onClick={onAddToQueue}
